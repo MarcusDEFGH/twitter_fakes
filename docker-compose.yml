@@ -1,0 +1,112 @@
+version: "2"
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: on-failure
+    container_name: rabbitMQ
+    env_file:
+      - ./.env
+    expose:
+        - 5672
+        - 15672
+
+  database:
+    image: postgres:9.5
+    restart: on-failure
+    container_name: database_web
+    env_file:
+      - ./.env
+    volumes:
+      - db_dev:/var/lib/postgresql/data
+    expose:
+      - 5432
+
+  pgadmin:
+    image: thajeztah/pgadmin4
+    container_name: pgadmin_web
+    links:
+      - database
+    ports:
+      - 5050:5050
+
+  webserver:
+    image: twitter_fakes
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: webserver
+    restart: on-failure
+    env_file:
+      - ./.env
+    ports:
+      - "8000:8000"
+    command:
+      bash -c "python manage.py runserver 0.0.0.0:8000"
+    depends_on:
+      - database
+      - rabbitmq
+    volumes:
+      - webserver_staticfiles:/app/twitter_fakes/staticfiles
+      - webserver_media:/app/twitter_fakes/media
+      - .:/app
+    links:
+      - database
+      - rabbitmq
+
+  worker:
+    image: twitter_fakes
+    restart: on-failure
+    container_name: worker
+    depends_on:
+      - webserver
+    env_file:
+      - ./.env
+    volumes:
+      - webserver_staticfiles:/app/twitter_fakes/staticfiles
+      - webserver_media:/app/twitter_fakes/media
+      - .:/app
+    links:
+      - database
+      - rabbitmq
+    command: celery -A twitter_fakes worker -l INFO -n worker
+
+  # flower:
+  #     restart: always
+  #     image: twitter_fakes
+  #     container_name: flower
+  #     environment:
+  #         DOCKER_TLS_VERIFY: 'false'
+  #     env_file:
+  #         - ./.env
+  #     command: celery flower --port=5757
+  #     expose:
+  #         - "5757"
+  #     ports:
+  #         - "5757:5757"
+  #     links:
+  #         - rabbitmq
+
+  scheduler:
+      image: twitter_fakes
+      restart: on-failure
+      container_name: scheduler
+      depends_on:
+          - webserver
+      mem_limit: 500m
+      env_file:
+          - ./.env
+      volumes:
+          - webserver_staticfiles:/app/staticfiles
+          - webserver_media:/app/media
+          - .:/app
+      links:
+          - database
+          - rabbitmq
+      command: celery -A twitter_fakes beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+
+volumes:
+  db_dev:
+  webserver_staticfiles:
+  webserver_media:

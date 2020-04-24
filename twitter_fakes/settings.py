@@ -48,6 +48,7 @@ LOCAL_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    'django_celery_beat',
     'rest_framework',
 ]
 
@@ -138,3 +139,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+#####################################
+# CELERY SETTINGS
+#####################################
+
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='django://')
+from .celery_conf import * # noqa
