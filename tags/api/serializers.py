@@ -15,13 +15,12 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         read_only_fields = ('name', 'is_active', 'potential_fake_users',
-                            'fake_users', 'fake_users', 'reported_users',
-                            'banned_users')
+                            'fake_users', 'reported_users', 'banned_users')
 
     def get_users(self):
         return User.objects.filter(tag_id=self.id)
 
-    def get_potential_fake_users(self):
+    def get_potential_fake_accounts(self):
         return self.users.filter(potential_fake=True)
 
     def get_fake_users(self):
