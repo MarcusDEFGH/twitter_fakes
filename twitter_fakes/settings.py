@@ -50,6 +50,7 @@ LOCAL_APPS = [
 THIRD_PARTY_APPS = [
     'django_celery_beat',
     'rest_framework',
+    'twitter',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
